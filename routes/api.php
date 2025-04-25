@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\PropertyController;
+use App\Http\Controllers\VisitorController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -8,14 +10,26 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-
 // Authentication
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/logout', [AuthController::class, 'logout']);
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 
-Route::middleware('auth:sanctum')->group(function (){
-    Route::get('/data', function (){
-       return response()->json(['message'=>'data']);
-    });
+// Property endpoints
+Route::middleware(['auth:sanctum', 'CheckUserMiddleware'])->prefix('user')->group(function (){
+    Route::get('/getProperty', [PropertyController::class,'index']);
+    Route::get('/get-property', [PropertyController::class,'show']);
+    Route::post('/storeProperty', [PropertyController::class,'store']);
+    Route::patch('/updateProperty/{property}', [PropertyController::class,'update']);
+    Route::delete('/deleteProperty/{id}', [PropertyController::class,'destroy']);
+    // Save property
+    Route::post('saved-property/{property}', [PropertyController::class, 'saved_property']);
+    Route::get('show-saved-property', [PropertyController::class, 'show_saved_property']);
+});
+
+// Show data for visitor
+Route::get('/realestate', [VisitorController::class, 'index']);
+
+Route::middleware(['auth:sanctum','CheckAdminMiddleware'])->prefix('admin')->group(function (){
+   Route::
 });

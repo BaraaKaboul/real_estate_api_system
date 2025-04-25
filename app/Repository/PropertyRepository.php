@@ -1,0 +1,240 @@
+<?php
+
+namespace App\Repository;
+
+use App\ImageTrait;
+use App\Models\Property;
+use App\Models\Saved_properties;
+use App\ResponseTrait;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Validator;
+
+class PropertyRepository implements Interface\PropertyRepositoryInterface
+{
+    use ResponseTrait;
+    use ImageTrait;
+
+    public function index()
+    {
+        try {
+            $data = Property::orderBy('created_at','DESC')->with('images')->paginate(5);
+            if (!$data){
+                return $this->fail('There is no property found',404);
+            }
+            return $this->success('Data fetched successfully',200,$data);
+
+        }catch (\Exception $e){
+            return $this->fail($e,500);
+        }
+    }
+
+    public function show($request)
+    {
+        try {
+            $prop_by_id = Property::where('id',$request->id)->with('images')->first();
+            if (!$prop_by_id){
+                return $this->fail('There is no property found',404);
+            }
+            return $this->success('Data fetched successfully',200,$prop_by_id);
+
+        }catch (\Exception $e){
+            return $this->fail($e,500);
+        }
+    }
+
+
+    public function store($request)
+    {
+        DB::beginTransaction();
+        try {
+            $prop = new Property();
+            $prop->title = $request->title;
+            $prop->description = $request->description;
+            $prop->price = $request->price;
+            $prop->area = $request->area;
+            $prop->type = $request->type;
+            $prop->purpose = $request->purpose;
+            $prop->status = $request->status;
+            $prop->phone = $request->phone;
+            $prop->balconies = $request->balconies;
+            $prop->bedrooms = $request->bedrooms;
+            $prop->bathrooms = $request->bathrooms;
+            $prop->livingRooms = $request->livingRooms;
+            $prop->location_lat = $request->location_lat;
+            $prop->location_lon = $request->location_lon;
+            $prop->user_id = auth()->user()->id;
+
+            $prop->save();
+
+            $images = [];
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $file) {
+                    $path = $this->storeImage($file, auth()->user()->name);
+
+                    $images[] = $prop->images()->create([
+                        'filename' => time() . '/' . $file->getClientOriginalName(),
+                        'imageable_id' => $prop->id,
+                        'imageable_type'=> 'App\Models\Property'
+                    ]);
+                }
+            }
+            DB::commit();
+            return $this->success('Data has been stored successfully',201,['property'=>$prop, 'images'=>$images]);
+
+        }catch (\Exception $e){
+            DB::rollBack();
+            return $this->fail($e,500);
+        }
+    }
+
+    public function update($request, Property $property)
+    {
+        DB::beginTransaction();
+        try {
+//            $property = Property::findOrFail($property);
+
+            if ($property->user_id != auth()->id()) {
+                return $this->fail('Unauthorized to update this property.', 403);
+            }
+
+            // Handle different content types
+            $input = $request->all();
+            if ($request->hasFile('images')) {
+                $input = array_merge($input, [
+                    'images' => $request->file('images')
+                ]);
+            }
+
+            $prop = new Property();
+            $prop->title = $request->title;
+            $prop->description = $request->description;
+            $prop->price = $request->price;
+            $prop->area = $request->area;
+            $prop->type = $request->type;
+            $prop->purpose = $request->purpose;
+            $prop->status = $request->status;
+            $prop->phone = $request->phone;
+            $prop->balconies = $request->balconies;
+            $prop->bedrooms = $request->bedrooms;
+            $prop->bathrooms = $request->bathrooms;
+            $prop->livingRooms = $request->livingRooms;
+            $prop->location_lat = $request->location_lat;
+            $prop->location_lon = $request->location_lon;
+            $prop->user_id = auth()->user()->id;
+
+            $prop->save();
+
+            // Handle image replacement
+            $newlyUploadedImages = [];
+            if ($request->hasFile('images')) {
+                // Delete existing images
+                foreach ($property->images as $oldImage) {
+                    $this->deleteImage($oldImage->filename);
+                    $oldImage->delete();
+                }
+
+                // Store new images
+                foreach ($request->file('images') as $file) {
+                    $path = $this->storeImage($file, auth()->user()->name);
+
+                    $newlyUploadedImages[] = $property->images()->create([
+                        'filename' => $path,
+                        'imageable_id' => $property->id,
+                        'imageable_type'=> 'App\Models\Property'
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            // Refresh the property model to get the latest state including any newly associated
+            $property->refresh();
+
+            return $this->success('Property updated successfully', 200, [
+                'property' => $property,
+                'images' => !empty($images) ? $images : $property->images
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Update failed: ' . $e->getMessage());
+            return $this->fail('Update failed: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function delete($id)
+    {
+        DB::beginTransaction();
+        try {
+            $property = Property::find($id);
+            if ($property){
+                if ($property->user_id != auth()->user()->id){
+                    DB::rollBack();
+                    return $this->fail('Unauthorized to delete this property.', 403);
+                }
+                foreach ($property->images as $image) {
+                    if (!empty($image->filename)){
+                        $this->deleteImage($image->filename);
+                    }
+                    $image->delete();
+                }
+                $property->delete();
+                DB::commit();
+                return response()->json(['message'=>'Property deleted successfully','code'=>200]);
+            }else {
+                DB::commit();
+                return $this->success('Property not found or already deleted.', 200, null);
+            }
+        }catch (\Exception $e){
+            DB::rollBack();
+            Log::error('Delete failed: ' . $e->getMessage());
+            return $this->fail('Delete failed: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function saved_property($request, Property $property)
+    {
+        try {
+            //$prop = Property::where('id',$id)->select('id');
+
+            $alreadySaved = Saved_properties::where([
+                'user_id'=>auth()->user()->id,
+                'property_id'=>$property->id,
+            ])->exists();
+
+            if ($alreadySaved){
+                return $this->fail('This property alreay saved',409);
+            }
+
+            $saved_prop = Saved_properties::create([
+                'property_id'=>$property->id,
+                'user_id'=>auth()->user()->id,
+            ]);
+            return $this->success('The property saved successfully',200,['property_saved'=>$saved_prop,'property'=>$property]);
+        }catch (\Exception $e){
+            DB::rollBack();
+            Log::error('Saved failed: ' . $e->getMessage());
+            return $this->fail('Saved failed: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function show_saved_property()
+    {
+        try {
+            $show = Saved_properties::with('property')->where('user_id',auth()->user()->id)->get();
+            if ($show->isEmpty()){
+                return $this->fail('There is no properties saved',404);
+            }
+            return $this->success('The saved properties fetched',200,['properties'=>$show]);
+
+        }catch (\Exception $e){
+            DB::rollBack();
+            Log::error('Saved failed: ' . $e->getMessage());
+            return $this->fail('Saved failed: ' . $e->getMessage(), 500);
+        }
+    }
+}
+

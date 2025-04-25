@@ -22,10 +22,11 @@ class AuthRepository implements Interface\AuthRepositoryInterface
                 'password' => 'required|string|min:8',
             ]);
             if($validator->fails()){
-                return response()->json($validator->errors()->toJson(), 400);
+//                return response()->json($validator->errors()->toJson(), 400);
+                return $this->fail($validator->errors(), 400);
             }
-            $user = User::create([
-                $validator->validated(),
+            $user = User::create($validator->validated(),[
+//                $validator->validated(),
                 'name'=>$request->name,
                 'email'=>$request->email,
                 'password'=>Hash::make($request->password),
