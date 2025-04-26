@@ -60,7 +60,7 @@ class AuthRepository implements Interface\AuthRepositoryInterface
                 return response()->json($validator->errors(), 422);
             }
 
-            $user = User::where('email','=',$request->email)->where('name',$request->name)->first();
+            $user = User::where('email','=',$request->email)->first();
             $validator->validated();
             if (!$user || !Hash::check($request->password,$user->password)){
                 return $this->fail('The provided credentials are incorrect', 505);

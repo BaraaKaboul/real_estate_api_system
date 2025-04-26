@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\VisitorController;
+use App\Http\Controllers\AdminController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -30,6 +31,8 @@ Route::middleware(['auth:sanctum', 'CheckUserMiddleware'])->prefix('user')->grou
 // Show data for visitor
 Route::get('/realestate', [VisitorController::class, 'index']);
 
+// Admin routes
 Route::middleware(['auth:sanctum','CheckAdminMiddleware'])->prefix('admin')->group(function (){
-   Route::
+    Route::get('/get-properties', [AdminController::class, 'pending_properties']);
+    Route::get('/get-users', [AdminController::class, 'get_users']);
 });
