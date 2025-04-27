@@ -14,7 +14,7 @@ class VisitorRepository implements Interface\VisitorRepositoryInterface
     public function index()
     {
         try {
-            $prop = Property::orderBy('created_at','DESC')->paginate(4);
+            $prop = Property::where('status','accept')->orderBy('created_at','DESC')->paginate(4);
             return $this->success('Property fetched successfully',200,['properties'=>$prop]);
 
         }catch (\Exception $e){

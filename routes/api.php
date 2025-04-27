@@ -26,6 +26,7 @@ Route::middleware(['auth:sanctum', 'CheckUserMiddleware'])->prefix('user')->grou
     // Save property
     Route::post('saved-property/{property}', [PropertyController::class, 'saved_property']);
     Route::get('show-saved-property', [PropertyController::class, 'show_saved_property']);
+    Route::delete('remove-saved-property/{id}', [PropertyController::class, 'remove_saved_property']);
 });
 
 // Show data for visitor

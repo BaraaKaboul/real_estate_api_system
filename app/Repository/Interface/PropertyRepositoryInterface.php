@@ -3,7 +3,6 @@
 namespace App\Repository\Interface;
 
 use App\Models\Property;
-use http\Env\Request;
 
 interface PropertyRepositoryInterface
 {
@@ -20,4 +19,6 @@ interface PropertyRepositoryInterface
     public function saved_property($request, Property $property);
 
     public function show_saved_property();
+
+    public function remove_saved_property($id);
 }

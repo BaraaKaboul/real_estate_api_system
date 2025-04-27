@@ -42,4 +42,8 @@ class PropertyController extends Controller
     public function show_saved_property(){
         return $this->property->show_saved_property();
     }
+
+    public function remove_saved_property($id){
+        return $this->property->remove_saved_property($id);
+    }
 }

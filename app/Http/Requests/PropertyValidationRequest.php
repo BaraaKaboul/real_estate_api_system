@@ -29,7 +29,6 @@ class PropertyValidationRequest extends FormRequest
             'area' => 'required|numeric|min:0',
             'type' => ['required', Rule::in(['house', 'apartment', 'land', 'commercial'])],
             'purpose' => ['required', Rule::in(['sale', 'rent'])],
-            'status' => ['required', Rule::in(['accept', 'denied', 'pending'])],
             'phone' => 'required|string|max:20',
             'balconies' => 'integer|min:0',
             'bedrooms' => 'integer|min:0',

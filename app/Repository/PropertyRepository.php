@@ -6,6 +6,7 @@ use App\ImageTrait;
 use App\Models\Property;
 use App\Models\Saved_properties;
 use App\ResponseTrait;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -57,7 +58,6 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
             $prop->area = $request->area;
             $prop->type = $request->type;
             $prop->purpose = $request->purpose;
-            $prop->status = $request->status;
             $prop->phone = $request->phone;
             $prop->balconies = $request->balconies;
             $prop->bedrooms = $request->bedrooms;
@@ -235,6 +235,20 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
             Log::error('Saved failed: ' . $e->getMessage());
             return $this->fail('Saved failed: ' . $e->getMessage(), 500);
         }
+    }
+
+    public function remove_saved_property($id)
+    {
+        $user = auth()->user();
+        if ($user){
+            $sa_prop = Saved_properties::where(['user_id'=>Auth::user()->id,'property_id'=>$id])->first();
+            if (!$sa_prop){
+                return $this->fail('The saved property not found or already deleted',404);
+            }
+            $sa_prop->delete();
+            return $this->success('The saved property deleted successfully',200,$sa_prop);
+        }
+        return $this->fail("You don't have permission to delete this property",403);
     }
 }
 
