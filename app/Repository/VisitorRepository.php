@@ -15,6 +15,9 @@ class VisitorRepository implements Interface\VisitorRepositoryInterface
     {
         try {
             $prop = Property::where('status','accept')->orderBy('created_at','DESC')->paginate(4);
+            if ($prop->isEmpty()){
+                return $this->fail('There is no properties to show',404);
+            }
             return $this->success('Property fetched successfully',200,['properties'=>$prop]);
 
         }catch (\Exception $e){

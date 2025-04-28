@@ -14,10 +14,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 // Authentication
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+Route::post('/logout', [AuthController::class, 'logout'])->middleware(['auth:sanctum','BanUser']);
 
 // Property endpoints
-Route::middleware(['auth:sanctum', 'CheckUserMiddleware'])->prefix('user')->group(function (){
+Route::middleware(['auth:sanctum', 'CheckUserMiddleware','BanUser'])->prefix('user')->group(function (){
     Route::get('/getProperty', [PropertyController::class,'index']);
     Route::get('/get-property', [PropertyController::class,'show']);
     Route::post('/storeProperty', [PropertyController::class,'store']);
@@ -36,4 +36,6 @@ Route::get('/realestate', [VisitorController::class, 'index']);
 Route::middleware(['auth:sanctum','CheckAdminMiddleware'])->prefix('admin')->group(function (){
     Route::get('/get-properties', [AdminController::class, 'pending_properties']);
     Route::get('/get-users', [AdminController::class, 'get_users']);
+    Route::patch('/ban-user/{id}', [AdminController::class, 'banUser']);
+    Route::patch('/unban-user/{id}', [AdminController::class, 'unBanUser']);
 });

@@ -41,4 +41,32 @@ class AdminRepository implements Interface\AdminRepositoryInterface
             return $this->fail('Fetched failed: ' . $e->getMessage(), 500);
         }
     }
+
+    public function banUser($id)
+    {
+        try {
+            $user = User::where('role','user')->findOrFail($id);
+            $user->update([
+                'status'=>'ban',
+            ]);
+            return $this->success('User status updated successfully',200,$user);
+        }catch (\Exception $e){
+            Log::error('Updated failed: ' . $e->getMessage());
+            return $this->fail('Updated failed: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function unBanUser($id)
+    {
+        try {
+            $user = User::where('role','user')->findOrFail($id);
+            $user->update([
+                'status'=>'active',
+            ]);
+            return $this->success('User status updated successfully',200,$user);
+        }catch (\Exception $e){
+            Log::error('Updated failed: ' . $e->getMessage());
+            return $this->fail('Updated failed: ' . $e->getMessage(), 500);
+        }
+    }
 }

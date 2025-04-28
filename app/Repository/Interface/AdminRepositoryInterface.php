@@ -7,4 +7,8 @@ interface AdminRepositoryInterface
     public function pending_properties();
 
     public function get_users();
+
+    public function banUser($id);
+
+    public function unBanUser($id);
 }

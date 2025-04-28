@@ -21,4 +21,12 @@ class AdminController extends Controller
     public function get_users(){
         return $this->admin->get_users();
     }
+
+    public function banUser($id){
+        return $this->admin->banUser($id);
+    }
+
+    public function unBanUser($id){
+        return $this->admin->unBanUser($id);
+    }
 }

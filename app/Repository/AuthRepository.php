@@ -65,6 +65,9 @@ class AuthRepository implements Interface\AuthRepositoryInterface
             if (!$user || !Hash::check($request->password,$user->password)){
                 return $this->fail('The provided credentials are incorrect', 505);
             }
+            if ($user->status === 'ban'){
+                return $this->fail('Your account has been banned. Please contact the administrator',403);
+            }
             $token = $user->createToken('auth_token')->plainTextToken;
 
             $responseData = [

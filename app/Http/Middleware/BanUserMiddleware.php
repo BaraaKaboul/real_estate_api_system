@@ -2,12 +2,15 @@
 
 namespace App\Http\Middleware;
 
+use App\ResponseTrait;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class BanUserMiddleware
 {
+    use ResponseTrait;
     /**
      * Handle an incoming request.
      *
@@ -15,14 +18,18 @@ class BanUserMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if(auth()->check() && (auth()->user()->status === 'غير مفعل')){
-            Auth::logout();
+        if(auth()->check() && (auth()->user()->status === 'ban')){
+//            Auth::logout();
+//
+//            $request->session()->invalidate();
+//
+//            $request->session()->regenerateToken();
 
-            $request->session()->invalidate();
+            $user = Auth::guard('sanctum')->user();
+            $user->tokens()->delete();
 
-            $request->session()->regenerateToken();
-
-            return redirect()->route('login')->with('error', 'لقد تم تقييد حسابك الرجاء مراجعة المسؤول');
+            return $this->fail('Your account has been banned. Please contact the administrator',403);
         }
+        return $next($request);
     }
 }

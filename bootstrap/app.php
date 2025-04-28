@@ -13,7 +13,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias(['CheckUserMiddleware' => \App\Http\Middleware\CheckUserMiddleware::class,
-                            'CheckAdminMiddleware' => \App\Http\Middleware\CheckAdminMiddleware::class]);
+                            'CheckAdminMiddleware' => \App\Http\Middleware\CheckAdminMiddleware::class,
+                            'BanUser' => \App\Http\Middleware\BanUserMiddleware::class,]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
