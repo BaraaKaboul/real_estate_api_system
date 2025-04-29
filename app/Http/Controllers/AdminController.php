@@ -33,4 +33,8 @@ class AdminController extends Controller
     public function accept_pending_property($id){
         return $this->admin->accept_pending_property($id);
     }
+
+    public function denied_property($user_id, $property_id){
+        return $this->admin->denied_property($user_id, $property_id);
+    }
 }
