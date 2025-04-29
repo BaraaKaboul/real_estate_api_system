@@ -69,4 +69,16 @@ class AdminRepository implements Interface\AdminRepositoryInterface
             return $this->fail('Updated failed: ' . $e->getMessage(), 500);
         }
     }
+
+    public function accept_pending_property($id){
+        try {
+            $prop = Property::findOrFail($id)->update([
+               'status'=>'accept'
+            ]);
+            return $this->success('Property status updated successfully',200,$prop);
+        }catch (\Exception $e){
+            Log::error('Updated failed: ' . $e->getMessage());
+            return $this->fail('Updated failed: ' . $e->getMessage(), 500);
+        }
+    }
 }

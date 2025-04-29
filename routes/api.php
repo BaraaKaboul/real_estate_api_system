@@ -38,4 +38,5 @@ Route::middleware(['auth:sanctum','CheckAdminMiddleware'])->prefix('admin')->gro
     Route::get('/get-users', [AdminController::class, 'get_users']);
     Route::patch('/ban-user/{id}', [AdminController::class, 'banUser']);
     Route::patch('/unban-user/{id}', [AdminController::class, 'unBanUser']);
+    Route::patch('/accept-pending-property/{id}', [AdminController::class, 'accept_pending_property']);
 });

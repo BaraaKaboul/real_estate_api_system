@@ -11,4 +11,6 @@ interface AdminRepositoryInterface
     public function banUser($id);
 
     public function unBanUser($id);
+
+    public function accept_pending_property($id);
 }

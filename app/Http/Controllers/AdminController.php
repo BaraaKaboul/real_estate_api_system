@@ -29,4 +29,8 @@ class AdminController extends Controller
     public function unBanUser($id){
         return $this->admin->unBanUser($id);
     }
+
+    public function accept_pending_property($id){
+        return $this->admin->accept_pending_property($id);
+    }
 }

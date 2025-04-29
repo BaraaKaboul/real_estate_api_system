@@ -38,6 +38,7 @@ class AuthRepository implements Interface\AuthRepositoryInterface
                     'id'=>$user->id,
                     'name'=>$user->name,
                     'email'=>$user->email,
+                    'role'=>$user->role,
                 ],
                 'token' => $token,
             ];
@@ -75,6 +76,7 @@ class AuthRepository implements Interface\AuthRepositoryInterface
                     'id'=>$user->id,
                     'name'=>$user->name,
                     'email'=>$user->email,
+                    'role'=>$user->role,
                 ],
                 'token'=> $token
             ];
