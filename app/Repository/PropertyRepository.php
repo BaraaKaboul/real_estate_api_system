@@ -21,7 +21,7 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
     public function index()
     {
         try {
-            $data = Property::orderBy('created_at','DESC')->with('images')->paginate(5);
+            $data = Property::where('user_id',auth()->user()->id)->orderBy('created_at','DESC')->with('images')->paginate(5);
             if (!$data){
                 return $this->fail('There is no property found',404);
             }
@@ -35,7 +35,7 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
     public function show($request)
     {
         try {
-            $prop_by_id = Property::where('id',$request->id)->with('images')->first();
+            $prop_by_id = Property::where(['id'=>$request->id,'user_id'=>auth()->user()->id])->with('images')->first();
             if (!$prop_by_id){
                 return $this->fail('There is no property found',404);
             }
