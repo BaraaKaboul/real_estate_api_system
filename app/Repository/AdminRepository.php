@@ -73,7 +73,7 @@ class AdminRepository implements Interface\AdminRepositoryInterface
 
     public function accept_pending_property($id){
         try {
-            $checkProp = Property::where(['id'=>$id, 'status'=>'accept']);
+            $checkProp = Property::where(['id'=>$id, 'status'=>'accept'])->exists();
             if ($checkProp){
                 return $this->fail('This property already accepted',409);
             }
