@@ -26,4 +26,17 @@ class VisitorRepository implements Interface\VisitorRepositoryInterface
             return $this->fail('visitor failed: ' . $e->getMessage(), 500);
         }
     }
+
+    public function show($request){
+        try {
+            $prop_by_id = Property::where('id',$request->id)->with('images')->first();
+            if (!$prop_by_id){
+                return $this->fail('There is no property found',404);
+            }
+            return $this->success('Data fetched successfully',200,$prop_by_id);
+
+        }catch (\Exception $e){
+            return $this->fail($e,500);
+        }
+    }
 }

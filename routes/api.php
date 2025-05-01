@@ -29,8 +29,9 @@ Route::middleware(['auth:sanctum', 'CheckUserMiddleware','BanUser'])->prefix('us
     Route::delete('remove-saved-property/{id}', [PropertyController::class, 'remove_saved_property']);
 });
 
-// Show data for visitor
+// Visitor routes
 Route::get('/realestate', [VisitorController::class, 'index']);
+Route::get('/realestate-property/{id}', [VisitorController::class, 'show']);
 
 // Admin routes
 Route::middleware(['auth:sanctum','CheckAdminMiddleware'])->prefix('admin')->group(function (){
