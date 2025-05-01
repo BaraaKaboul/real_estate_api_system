@@ -73,18 +73,28 @@ class AdminRepository implements Interface\AdminRepositoryInterface
 
     public function accept_pending_property($id){
         try {
-            $checkProp = Property::where(['id'=>$id, 'status'=>'accept'])->exists();
-            if ($checkProp){
-                return $this->fail('This property already accepted',409);
+            // Check if already accepted
+            if (Property::where('id', $id)->where('status', 'accept')->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This property is already accepted',
+                    'code' => 409,
+                    'current_status' => 'accept' // Helpful for frontend
+                ], 409);
             }
 
-            $prop = Property::findOrFail($id)->update([
-               'status'=>'accept'
+            $property = Property::findOrFail($id);
+            $property->status = 'accept';
+            $property->save();
+
+            return $this->success('Property accepted successfully', 200, [
+                'property' => $property,
+                'new_status' => 'accept'
             ]);
-            return $this->success('Property status updated successfully',200,$prop);
-        }catch (\Exception $e){
-            Log::error('Updated failed: ' . $e->getMessage());
-            return $this->fail('Updated failed: ' . $e->getMessage(), 500);
+
+        } catch (\Exception $e) {
+            Log::error('Accept failed: ' . $e->getMessage());
+            return $this->fail('Failed to accept property: ' . $e->getMessage(), 500);
         }
     }
 
@@ -92,30 +102,43 @@ class AdminRepository implements Interface\AdminRepositoryInterface
     {
         DB::beginTransaction();
         try {
-            $prop = Property::where(['id'=>$property_id, 'user_id'=>$user_id])->first();
-            if (!$prop){
-                return $this->fail('The property not found', 404);
+            $property = Property::where([
+                'id' => $property_id,
+                'user_id' => $user_id
+            ])->firstOrFail();
+
+            // Check if already denied (with exists())
+            if (Denied_property::where([
+                'user_id' => $user_id,
+                'property_id' => $property_id
+            ])->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This property is already denied by this user',
+                    'code' => 409,
+                    'current_status' => 'denied'
+                ], 409);
             }
 
-            $alreadyExist = Denied_property::where(['user_id'=>$user_id, 'property_id'=>$property_id]);
-            if ($alreadyExist){
-                return $this->fail('This property is already denied by this user', 409);
-            }
+            $property->update(['status' => 'denied']);
 
-            $prop->update([
-                'status'=>'denied'
-            ]);
             $denied_property = Denied_property::create([
-                'property_id'=>$prop->id,
-                'user_id'=>$prop->user_id
+                'property_id' => $property->id,
+                'user_id' => $property->user_id
             ]);
-            DB::commit();
-            return $this->success('Property updated and added to the denied table',200,['property'=>$prop,'denied_property'=>$denied_property]);
 
-        }catch (\Exception $e){
+            DB::commit();
+
+            return $this->success('Property denied successfully', 200, [
+                'property' => $property,
+                'denied_property' => $denied_property,
+                'new_status' => 'denied'
+            ]);
+
+        } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Updated failed: ' . $e->getMessage());
-            return $this->fail('Updated failed: ' . $e->getMessage(), 500);
+            Log::error('Deny failed: ' . $e->getMessage());
+            return $this->fail('Failed to deny property: ' . $e->getMessage(), 500);
         }
     }
 }
