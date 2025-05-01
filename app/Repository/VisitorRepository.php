@@ -27,9 +27,9 @@ class VisitorRepository implements Interface\VisitorRepositoryInterface
         }
     }
 
-    public function show($request){
+    public function show($id){
         try {
-            $prop_by_id = Property::where('id',$request->id)->with('images')->first();
+            $prop_by_id = Property::where('id',$id)->with('images')->first();
             if (!$prop_by_id){
                 return $this->fail('There is no property found',404);
             }

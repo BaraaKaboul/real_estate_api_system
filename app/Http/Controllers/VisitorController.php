@@ -16,7 +16,7 @@ class VisitorController extends Controller
         return $this->visitor->index();
     }
 
-    public function show(Request $request){
-        return $this->visitor->show($request);
+    public function show($id){
+        return $this->visitor->show($id);
     }
 }

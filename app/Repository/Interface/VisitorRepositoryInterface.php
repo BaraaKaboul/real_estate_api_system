@@ -6,5 +6,5 @@ interface VisitorRepositoryInterface
 {
     public function index();
 
-    public function show($request);
+    public function show($id);
 }
