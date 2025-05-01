@@ -31,7 +31,7 @@ Route::middleware(['auth:sanctum', 'CheckUserMiddleware','BanUser'])->prefix('us
 
 // Visitor routes
 Route::get('/realestate', [VisitorController::class, 'index']);
-Route::get('/realestate-property/{id}', [VisitorController::class, 'show']);
+Route::get('/realestate/property-details', [VisitorController::class, 'show']);
 
 // Admin routes
 Route::middleware(['auth:sanctum','CheckAdminMiddleware'])->prefix('admin')->group(function (){
