@@ -37,10 +37,11 @@ class PropertyValidationRequest extends FormRequest
             'location_lat' => 'required|numeric|between:-90,90',
             'location_lon' => 'required|numeric|between:-180,180',
             'images.*' => 'sometimes|image|mimes:jpeg,png,jpg|max:2048',
+            'address' => 'required|string',
         ];
 
         // For update operations
-        if ($this->isMethod('put')) {
+        if ($this->isMethod('patch')) {
         $rules['id'] = 'required|exists:properties,id';
         }
 

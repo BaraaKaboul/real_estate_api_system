@@ -66,6 +66,7 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
             $prop->location_lat = $request->location_lat;
             $prop->location_lon = $request->location_lon;
             $prop->user_id = auth()->user()->id;
+            $prop->address = $request->address;
 
             $prop->save();
 
@@ -92,42 +93,43 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
 
     public function update($request, Property $property)
     {
+        if ($property->user_id != auth()->id()) {
+            return $this->fail('Unauthorized to update this property.', 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'title'        => 'sometimes|required|string|max:255',
+            'description'  => 'sometimes|required|string',
+            'price'        => 'sometimes|required|numeric|min:0',
+            'area'         => 'sometimes|required|numeric|min:0',
+            'type'         => ['sometimes','required', Rule::in(['house', 'commercial'])], // Make sure Rule is imported
+            'purpose'      => ['sometimes','required', Rule::in(['sale', 'rent'])],
+            'status'       => ['sometimes','required', Rule::in(['accept', 'denied', 'pending'])], // Only if status is updatable by user
+            'phone'        => 'sometimes|required|string|max:20',
+            'balconies'    => 'sometimes|nullable|integer|min:0',
+            'bedrooms'     => 'sometimes|nullable|integer|min:0',
+            'bathrooms'    => 'sometimes|nullable|integer|min:0',
+            'livingRooms'  => 'sometimes|nullable|integer|min:0',
+            'location_lat' => 'sometimes|required|numeric|between:-90,90',
+            'location_lon' => 'sometimes|required|numeric|between:-180,180',
+            'address'      => 'sometimes|required|string|max:500',
+            'images'       => 'sometimes|nullable|array', // Validate 'images' key is an array if present
+            'images.*'     => 'sometimes|image|mimes:jpeg,png,jpg,gif,webp|max:2048' // Validate each image
+        ]);
+
+        // Check if validation fails
+        if ($validator->fails()) {
+            return $this->fail($validator->errors(), 400); // Return validation errors
+        }
+
+        // Get ONLY validated data
+        $validatedData = $validator->validated();
+
+
         DB::beginTransaction();
         try {
-//            $property = Property::findOrFail($property);
+            $property->update($validatedData); // This performs an UPDATE query
 
-            if ($property->user_id != auth()->id()) {
-                return $this->fail('Unauthorized to update this property.', 403);
-            }
-
-            // Handle different content types
-            $input = $request->all();
-            if ($request->hasFile('images')) {
-                $input = array_merge($input, [
-                    'images' => $request->file('images')
-                ]);
-            }
-
-            $prop = new Property();
-            $prop->title = $request->title;
-            $prop->description = $request->description;
-            $prop->price = $request->price;
-            $prop->area = $request->area;
-            $prop->type = $request->type;
-            $prop->purpose = $request->purpose;
-            $prop->status = $request->status;
-            $prop->phone = $request->phone;
-            $prop->balconies = $request->balconies;
-            $prop->bedrooms = $request->bedrooms;
-            $prop->bathrooms = $request->bathrooms;
-            $prop->livingRooms = $request->livingRooms;
-            $prop->location_lat = $request->location_lat;
-            $prop->location_lon = $request->location_lon;
-            $prop->user_id = auth()->user()->id;
-
-            $prop->save();
-
-            // Handle image replacement
             $newlyUploadedImages = [];
             if ($request->hasFile('images')) {
                 // Delete existing images
@@ -150,17 +152,17 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
 
             DB::commit();
 
-            // Refresh the property model to get the latest state including any newly associated
-            $property->refresh();
+            // Load the relationship to ensure it's fresh for the response.
+            $property->load('images');
 
             return $this->success('Property updated successfully', 200, [
                 'property' => $property,
-                'images' => !empty($images) ? $images : $property->images
+                'images' => !empty($newlyUploadedImages) ? $newlyUploadedImages : $property->images
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Update failed: ' . $e->getMessage());
+            Log::error('Update failed: ' . $e->getMessage() . ' Trace: ' . $e->getTraceAsString()); // Log more details
             return $this->fail('Update failed: ' . $e->getMessage(), 500);
         }
     }
@@ -251,4 +253,3 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
         return $this->fail("You don't have permission to delete this property",403);
     }
 }
-

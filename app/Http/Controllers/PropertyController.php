@@ -27,7 +27,7 @@ class PropertyController extends Controller
         return $this->property->show($request);
     }
 
-    public function update(PropertyValidationRequest $request, Property $property){
+    public function update(Request $request, Property $property){
         return $this->property->update($request, $property);
     }
 

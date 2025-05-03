@@ -22,6 +22,7 @@ class Property extends Model
         'location_lat',
         'location_lon',
         'user_id',
+        'address',
     ] ;
 
     public function users(){

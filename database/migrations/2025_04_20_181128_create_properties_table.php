@@ -21,6 +21,7 @@ return new class extends Migration
             $table->enum('purpose',['sale','rent']);
             $table->enum('status',['accept','denied','pending'])->default('pending');
             $table->string('phone');
+            $table->string('address');
             $table->tinyInteger('balconies');
             $table->tinyInteger('bedrooms');
             $table->tinyInteger('bathrooms');
