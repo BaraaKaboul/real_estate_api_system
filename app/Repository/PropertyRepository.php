@@ -98,23 +98,22 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
         }
 
         $validator = Validator::make($request->all(), [
-            'title'        => 'sometimes|required|string|max:255',
-            'description'  => 'sometimes|required|string',
-            'price'        => 'sometimes|required|numeric|min:0',
-            'area'         => 'sometimes|required|numeric|min:0',
-            'type'         => ['sometimes','required', Rule::in(['house', 'commercial'])], // Make sure Rule is imported
-            'purpose'      => ['sometimes','required', Rule::in(['sale', 'rent'])],
-            'status'       => ['sometimes','required', Rule::in(['accept', 'denied', 'pending'])], // Only if status is updatable by user
-            'phone'        => 'sometimes|required|string|max:20',
-            'balconies'    => 'sometimes|nullable|integer|min:0',
-            'bedrooms'     => 'sometimes|nullable|integer|min:0',
-            'bathrooms'    => 'sometimes|nullable|integer|min:0',
-            'livingRooms'  => 'sometimes|nullable|integer|min:0',
-            'location_lat' => 'sometimes|required|numeric|between:-90,90',
-            'location_lon' => 'sometimes|required|numeric|between:-180,180',
-            'address'      => 'sometimes|required|string|max:500',
-            'images'       => 'sometimes|nullable|array', // Validate 'images' key is an array if present
-            'images.*'     => 'sometimes|image|mimes:jpeg,png,jpg,gif,webp|max:2048' // Validate each image
+            'title'        => 'required|string|max:255',
+            'description'  => 'required|string',
+            'price'        => 'required|numeric|min:0',
+            'area'         => 'required|numeric|min:0',
+            'type'         => ['required', Rule::in(['house', 'commercial'])], // Make sure Rule is imported
+            'purpose'      => ['required', Rule::in(['sale', 'rent'])],
+            'phone'        => 'required|string|max:20',
+            'balconies'    => 'nullable|integer|min:0',
+            'bedrooms'     => 'nullable|integer|min:0',
+            'bathrooms'    => 'nullable|integer|min:0',
+            'livingRooms'  => 'nullable|integer|min:0',
+            'location_lat' => 'required|numeric|between:-90,90',
+            'location_lon' => 'required|numeric|between:-180,180',
+            'address'      => 'required|string|max:500',
+            'images'       => 'nullable|array', // Validate 'images' key is an array if present
+            'images.*'     => 'image|mimes:jpeg,png,jpg,gif,webp|max:2048' // Validate each image
         ]);
 
         // Check if validation fails
