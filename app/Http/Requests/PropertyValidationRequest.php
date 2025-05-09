@@ -36,7 +36,7 @@ class PropertyValidationRequest extends FormRequest
             'livingRooms' => 'integer|min:0',
             'location_lat' => 'required|numeric|between:-90,90',
             'location_lon' => 'required|numeric|between:-180,180',
-            'images.*' => 'sometimes|image|mimes:jpeg,png,jpg|max:2048',
+            'images.*' => 'sometimes|string|url|max:2048',
             'address' => 'required|string',
         ];
 
