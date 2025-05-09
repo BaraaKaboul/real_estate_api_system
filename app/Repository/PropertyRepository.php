@@ -71,19 +71,51 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
             $prop->save();
 
             $images = [];
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $file) {
-                    $path = $this->storeImage($file, auth()->user()->name);
+//            if ($request->hasFile('images')) {
+//                foreach ($request->file('images') as $file) {
+//                    $path = $this->storeImage($file, auth()->user()->name);
+//
+//                    $images[] = $prop->images()->create([
+//                        'filename' => time() . '/' . $file->getClientOriginalName(),
+//                        'imageable_id' => $prop->id,
+//                        'imageable_type'=> 'App\Models\Property'
+//                    ]);
+//                }
+//            }
+            if ($request->has('images') && is_array($request->input('images'))) {
+                $imageUrls = $request->input('images');
+                foreach ($imageUrls as $imageUrl) {
+                    if (filter_var($imageUrl, FILTER_VALIDATE_URL)) { // تحقق إضافي أن كل عنصر هو URL صالح
+                        // افترض أن لديك علاقة 'images' في موديل Property
+                        // وأن موديل Image لديه عمود 'url' أو 'link' أو 'path' لتخزين الرابط الكامل
+                        // أو إذا كنت لا تزال تستخدم 'filename' لتخزين الرابط الكامل، لا بأس بذلك مؤقتًا
+                        // لكن من الأفضل أن يكون اسم العمود معبرًا مثل 'url'.
 
-                    $images[] = $prop->images()->create([
-                        'filename' => time() . '/' . $file->getClientOriginalName(),
-                        'imageable_id' => $prop->id,
-                        'imageable_type'=> 'App\Models\Property'
-                    ]);
+                        // مثال إذا كان عمودك اسمه 'url' في جدول الصور:
+                        $imageModel = $prop->images()->create([
+                            'filename' => $imageUrl, // <--- حفظ رابط Cloudinary الكامل
+                             'imageable_id' => $prop->id, // هذا سيتم تعيينه تلقائيًا بواسطة العلاقة
+                             'imageable_type'=> 'App\Models\Property' // هذا سيتم تعيينه تلقائيًا بواسطة العلاقة
+                        ]);
+                        $savedImageModels[] = $imageModel;
+
+                        // مثال إذا كنت ستستخدم عمود 'filename' مؤقتًا لحفظ الرابط الكامل:
+                        // $imageModel = $prop->images()->create(['filename' => $imageUrl]);
+                        // $savedImageModels[] = $imageModel;
+
+                    } else {
+                        Log::warning('Invalid URL found in images array:', ['filename' => $imageUrl]);
+                    }
                 }
             }
             DB::commit();
-            return $this->success('Data has been stored successfully',201,['property'=>$prop, 'images'=>$images]);
+            //return $this->success('Data has been stored successfully',201,['property'=>$prop, 'images'=>$images]);
+            return $this->success(
+                'Data has been stored successfully',
+                201,
+                ['property' => $prop->load('images')] // افترض أن لديك علاقة اسمها 'images' في موديل Property
+            // أو أرجع $savedImageModels إذا كنت تفضل
+            );
 
         }catch (\Exception $e){
             DB::rollBack();
