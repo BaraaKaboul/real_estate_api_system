@@ -256,8 +256,8 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
 
     public function show_saved_property()
     {
-        try {
-            $show = Saved_properties::with('property')->where('user_id',auth()->user()->id)->get();
+        try {                             // Eager load property and its images
+            $show = Saved_properties::with('property.images')->where('user_id',auth()->user()->id)->get();
             if ($show->isEmpty()){
                 return $this->fail('There is no properties saved',404);
             }
