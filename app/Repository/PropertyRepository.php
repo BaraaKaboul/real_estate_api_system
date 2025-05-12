@@ -160,6 +160,7 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
         DB::beginTransaction();
         try {
             $property->update($validatedData); // This performs an UPDATE query
+            $property->status = 'pending';
 
             $newlyUploadedImages = [];
             if ($request->hasFile('images')) {
