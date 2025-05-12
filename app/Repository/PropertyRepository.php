@@ -143,9 +143,8 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
             'livingRooms'  => 'nullable|integer|min:0',
             'location_lat' => 'required|numeric|between:-90,90',
             'location_lon' => 'required|numeric|between:-180,180',
-            'address'      => 'required|string|max:500',
-            'images'       => 'nullable|array', // Validate 'images' key is an array if present
-            'images.*'     => 'image|mimes:jpeg,png,jpg,gif,webp|max:2048' // Validate each image
+            'address'      => 'required|string',
+            'images.*'     => 'sometimes|string|url',//'image|mimes:jpeg,png,jpg,gif,webp|max:2048' // Validate each image
         ]);
 
         // Check if validation fails
@@ -160,7 +159,7 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
         DB::beginTransaction();
         try {
             $property->update($validatedData); // This performs an UPDATE query
-            //$property->status = 'pending';
+            $property->status = 'pending';
 
             $newlyUploadedImages = [];
             if ($request->hasFile('images')) {
