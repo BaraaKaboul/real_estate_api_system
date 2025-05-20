@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Repository\Interface\AuthRepositoryInterface;
 use Illuminate\Http\Request;
 
@@ -24,5 +25,9 @@ class AuthController extends Controller
 
     public function logout(Request $request){
         return $this->auth->logout($request);
+    }
+
+    public function updateProfile(Request $request, $id){
+        return $this->auth->updateProfile($request, $id);
     }
 }

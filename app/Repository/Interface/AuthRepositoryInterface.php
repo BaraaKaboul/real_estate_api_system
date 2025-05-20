@@ -3,6 +3,7 @@
 namespace App\Repository\Interface;
 
 
+use App\Models\User;
 use Illuminate\Http\Request;
 
 interface AuthRepositoryInterface
@@ -12,4 +13,6 @@ interface AuthRepositoryInterface
     public function login($request);
 
     public function logout($request);
+
+    public function updateProfile($request, $id);
 }

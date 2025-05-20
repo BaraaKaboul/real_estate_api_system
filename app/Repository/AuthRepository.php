@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Models\User;
 use App\ResponseTrait;
+use http\Env\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -19,7 +20,7 @@ class AuthRepository implements Interface\AuthRepositoryInterface
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|between:2,100',
                 'email' => 'required|string|email|max:100|unique:users',
-                'password' => 'required|string|min:8',
+                'password' => 'required|string|confirmed|min:8',
             ]);
             if($validator->fails()){
 //                return response()->json($validator->errors()->toJson(), 400);
@@ -99,6 +100,33 @@ class AuthRepository implements Interface\AuthRepositoryInterface
             $user->tokens()->delete();
             return response()->json(['message' => 'User successfully logged out']);
 
+        } catch (\Exception $e) {
+            return $this->fail($e->getMessage(),500);
+        }
+    }
+
+    public function updateProfile($request, $id){
+        try {
+
+            if (auth()->user()->id != $id){
+                return $this->fail("You don't have permission to do this action",500);
+            }
+            $user = User::findOrFail($id);
+
+            $validator = Validator::make($request->all(), [
+                'new_name' => 'required|string|between:2,100',
+                'new_email' => 'required|string|email|max:100|unique:users,email,' . $user->id,
+                'password' => 'required|string|confirmed|min:8',
+            ]);
+            if($validator->fails()){
+                return $this->fail($validator->errors(), 400);
+            }
+            $user->update($validator->validated(),[
+                'name'=>$request->new_name,
+                'email'=>$request->new_email,
+                'password'=>Hash::make($request->password),
+            ]);
+            return $this->success('Account information updated successfully', 200, $user);
         } catch (\Exception $e) {
             return $this->fail($e->getMessage(),500);
         }
