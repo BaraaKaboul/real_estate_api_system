@@ -40,10 +40,10 @@ class PropertyValidationRequest extends FormRequest
             'address' => 'required|string',
         ];
 
-        // For update operations
-        if ($this->isMethod('patch')) {
-        $rules['id'] = 'required|exists:properties,id';
-        }
+//        // For update operations
+//        if ($this->isMethod('patch')) {
+//        $rules['id'] = 'required|exists:properties,id';
+//        }
 
         return $rules;
     }

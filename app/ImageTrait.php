@@ -4,6 +4,7 @@ namespace App;
 
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use PhpParser\Node\Expr\New_;
@@ -20,10 +21,14 @@ trait ImageTrait
           (new UploadApi())->upload($file);
       }
 
-    public function deleteImage($path)
+    public function deleteImage($deleteUrl)
     {
-        if (Storage::disk('public')->exists($path)) {
-            Storage::disk('public')->delete($path);
+        try {
+            Http::withOptions(['verify' => false])
+                ->timeout(30)
+                ->get($deleteUrl);
+        } catch (\Exception $e) {
+            Log::warning('Could not delete image from imgBB: ' . $e->getMessage());
         }
     }
 }

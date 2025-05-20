@@ -6,16 +6,10 @@ use App\ImageTrait;
 use App\Models\Property;
 use App\Models\Saved_properties;
 use App\ResponseTrait;
-use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
-use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\Validator;
-use Infotech\ImgBB\ImgBB;
 
 class PropertyRepository implements Interface\PropertyRepositoryInterface
 {
@@ -124,67 +118,67 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
         if ($property->user_id != auth()->id()) {
             return $this->fail('Unauthorized to update this property.', 403);
         }
-
-        $validator = Validator::make($request->all(), [
-            'title'        => 'required|string|max:255',
-            'description'  => 'required|string',
-            'price'        => 'required|numeric|min:0',
-            'area'         => 'required|numeric|min:0',
-            'type'         => ['required', Rule::in(['house', 'commercial'])], // Make sure Rule is imported
-            'purpose'      => ['required', Rule::in(['sale', 'rent'])],
-            'phone'        => 'required|string|max:20',
-            'balconies'    => 'nullable|integer|min:0',
-            'bedrooms'     => 'nullable|integer|min:0',
-            'bathrooms'    => 'nullable|integer|min:0',
-            'livingRooms'  => 'nullable|integer|min:0',
-            'location_lat' => 'required|numeric|between:-90,90',
-            'location_lon' => 'required|numeric|between:-180,180',
-            'address'      => 'required|string',
-            'images.*'     => 'sometimes|string|url',//'image|mimes:jpeg,png,jpg,gif,webp|max:2048' // Validate each image
+        try {
+        $property->update([
+            'title'=>$request->title,
+            'description'=>$request->description,
+            'price'=>$request->price,
+            'area'=>$request->area,
+            'type'=>$request->type,
+            'purpose'=>$request->purpose,
+            'phone'=>$request->phone,
+            'balconies'=>$request->balconies,
+            'bedrooms'=>$request->bedrooms,
+            'bathrooms'=>$request->bathrooms,
+            'livingRooms'=>$request->livingRooms,
+            'location_lat'=>$request->location_lat,
+            'location_lon'=>$request->location_lon,
+            'address'=>$request->address,
+            'status'=>'pending'
         ]);
 
-        // Check if validation fails
-        if ($validator->fails()) {
-            return $this->fail($validator->errors(), 400); // Return validation errors
-        }
+            $uploadedImages = [];
 
-        // Get ONLY validated data
-        $validatedData = $validator->validated();
-
-
-        DB::beginTransaction();
-        try {
-            $property->update($validatedData); // This performs an UPDATE query
-            $property->status = 'pending';
-
-            $newlyUploadedImages = [];
             if ($request->hasFile('images')) {
-                // Delete existing images
-                foreach ($property->images as $oldImage) {
-                    $this->deleteImage($oldImage->filename);
-                    $oldImage->delete();
+                foreach ($property->images as $image) {
+                    $this->deleteImage($image->url);
+                    $image->delete();
                 }
 
-                // Store new images
                 foreach ($request->file('images') as $file) {
-                    $path = $this->storeImage($file, auth()->user()->name);
+                    $response = Http::timeout(90)
+                        ->withOptions(['verify' => false])
+                        ->attach(
+                            'image',
+                            file_get_contents($file),
+                            $file->getClientOriginalName()
+                        )
+                        ->post('https://api.imgbb.com/1/upload?key=' . env('IMGBB_API_KEY'));
 
-                    $newlyUploadedImages[] = $property->images()->create([
-                        'filename' => $path,
-                        'imageable_id' => $property->id,
-                        'imageable_type'=> 'App\Models\Property'
-                    ]);
+                    if ($response->successful()) {
+                        $url = $response['data']['url'];
+
+                        $uploadedImages[] = $property->images()->create([
+                            'filename' => $file->getClientOriginalName(),
+                            'url' => $url,
+                            'imageable_id' => $property->id,
+                            'imageable_type' => Property::class
+                        ]);
+                    } else {
+                        Log::error('Failed to upload image to imgBB', [
+                            'response' => $response->body(),
+                        ]);
+                    }
                 }
             }
 
             DB::commit();
 
-            // Load the relationship to ensure it's fresh for the response.
             $property->load('images');
 
             return $this->success('Property updated successfully', 200, [
                 'property' => $property,
-                'images' => !empty($newlyUploadedImages) ? $newlyUploadedImages : $property->images
+                'images' => !empty($uploadedImages) ? $uploadedImages : $property->images,
             ]);
 
         } catch (\Exception $e) {
