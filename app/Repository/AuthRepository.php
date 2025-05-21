@@ -107,10 +107,10 @@ class AuthRepository implements Interface\AuthRepositoryInterface
 
     public function updateProfile($request, $id){
         try {
-
-            if (auth()->user()->id != $id){
-                return $this->fail("You don't have permission to do this action",500);
+            if (auth()->id() != $id) {
+                return $this->fail("You don't have permission to do this action", 403);
             }
+
             $user = User::findOrFail($id);
 
             $validator = Validator::make($request->all(), [
@@ -118,17 +118,21 @@ class AuthRepository implements Interface\AuthRepositoryInterface
                 'new_email' => 'required|string|email|max:100|unique:users,email,' . $user->id,
                 'password' => 'required|string|confirmed|min:8',
             ]);
-            if($validator->fails()){
+
+            if ($validator->fails()) {
                 return $this->fail($validator->errors(), 400);
             }
-            $user->update($validator->validated(),[
-                'name'=>$request->new_name,
-                'email'=>$request->new_email,
-                'password'=>Hash::make($request->password),
+
+            $user->update([
+                'name' => $request->new_name,
+                'email' => $request->new_email,
+                'password' => Hash::make($request->password),
             ]);
+
             return $this->success('Account information updated successfully', 200, $user);
+
         } catch (\Exception $e) {
-            return $this->fail($e->getMessage(),500);
+            return $this->fail($e->getMessage(), 500);
         }
     }
 }
