@@ -15,4 +15,10 @@ interface AdminRepositoryInterface
     public function accept_pending_property($id);
 
     public function denied_property($user_id, $property_id);
+
+    public function premium_requests();
+
+    public function accept_premium_request($id);
+
+    public function denied_premium_request($id);
 }

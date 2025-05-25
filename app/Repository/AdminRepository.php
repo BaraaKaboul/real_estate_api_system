@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Models\Denied_property;
+use App\Models\Premium;
 use App\Models\Property;
 use App\Models\User;
 use App\ResponseTrait;
@@ -139,6 +140,57 @@ class AdminRepository implements Interface\AdminRepositoryInterface
             DB::rollBack();
             Log::error('Deny failed: ' . $e->getMessage());
             return $this->fail('Failed to deny property: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function premium_requests()
+    {
+        try {
+            $get_prem_req = Premium::all('*');
+            return $this->success('Premium requests has been fetched successfully',200,$get_prem_req);
+        }catch (\Exception $e){
+            Log::error('Deny failed: ' . $e->getMessage());
+            return $this->fail('Failed to deny property: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function accept_premium_request($id)
+    {
+        try {
+            $premium = Premium::findOrFail($id);
+
+            $today = now();
+            $duration = match($premium->duration) {
+                'month' => $today->copy()->addMonth(),
+                'three month' => $today->copy()->addMonths(3),
+                'year' => $today->copy()->addYear(),
+                default => $today->copy()->addMonth()
+            };
+
+            $premium->status = 'accepted';
+            $premium->start_date = $today;
+            $premium->end_date = $duration;
+            $premium->save();
+
+            return $this->success('Premium request approved successfully', 200, $premium);
+
+        } catch (\Exception $e) {
+            Log::error('Approval failed: ' . $e->getMessage());
+            return $this->fail('Approval failed: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function denied_premium_request($id)
+    {
+        try {
+            $denied_premium = Premium::findOrFail($id);
+            $denied_premium->update([
+                'status'=>'denied',
+            ]);
+            return $this->success('Premium request denied successfully',200,null);
+        } catch (\Exception $e) {
+            Log::error('Approval failed: ' . $e->getMessage());
+            return $this->fail('Approval failed: ' . $e->getMessage(), 500);
         }
     }
 }

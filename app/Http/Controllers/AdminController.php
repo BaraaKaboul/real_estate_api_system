@@ -37,4 +37,16 @@ class AdminController extends Controller
     public function denied_property($user_id, $property_id){
         return $this->admin->denied_property($user_id, $property_id);
     }
+
+    public function premium_requests(){
+        return $this->admin->premium_requests();
+    }
+
+    public function accept_premium_request($id){
+        return $this->admin->accept_premium_request($id);
+    }
+
+    public function denied_premium_request($id){
+        return $this->admin->denied_premium_request($id);
+    }
 }

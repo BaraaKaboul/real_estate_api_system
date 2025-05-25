@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\ImageTrait;
+use App\Models\Premium;
 use App\Models\Property;
 use App\Models\Saved_properties;
 use App\ResponseTrait;
@@ -262,15 +263,49 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
 
     public function remove_saved_property($id)
     {
-        $user = auth()->user();
-        if ($user){
-            $sa_prop = Saved_properties::where(['user_id'=>Auth::user()->id,'property_id'=>$id])->first();
-            if (!$sa_prop){
-                return $this->fail('The saved property not found or already deleted',404);
+        try {
+            $user = auth()->user();
+            if ($user){
+                $sa_prop = Saved_properties::where(['user_id'=>Auth::user()->id,'property_id'=>$id])->first();
+                if (!$sa_prop){
+                    return $this->fail('The saved property not found or already deleted',404);
+                }
+                $sa_prop->delete();
+                return $this->success('The saved property deleted successfully',200,$sa_prop);
             }
-            $sa_prop->delete();
-            return $this->success('The saved property deleted successfully',200,$sa_prop);
+            return $this->fail("You don't have permission to delete this property",403);
+        }catch (\Exception $e){
+            Log::error('Removed failed: ' . $e->getMessage());
+            return $this->fail('Removed failed: ' . $e->getMessage(), 500);
         }
-        return $this->fail("You don't have permission to delete this property",403);
+
+    }
+
+    public function premium($request)
+    {
+        try {
+
+            $prem = new Premium();
+            $prem->name = auth()->user()->name;
+            $prem->office_name = $request->office_name;
+            $prem->office_location = $request->office_location;
+            $prem->phone = $request->phone;
+            $prem->about = $request->about;
+            $prem->plan = $request->plan;
+            $prem->duration = $request->duration;
+            $prem->user_id = auth()->user()->id;
+
+            $user_exist = Premium::where('name', auth()->user()->name)->exists();
+            if ($user_exist){
+                return $this->fail('This user already send premium request',501);
+            }
+            $prem->save();
+
+            return $this->success('Premium request has been saved',201,$prem);
+
+        }catch (\Exception $e){
+            Log::error('Store premium failed: ' . $e->getMessage());
+            return $this->fail('Store premium failed: ' . $e->getMessage(), 500);
+        }
     }
 }

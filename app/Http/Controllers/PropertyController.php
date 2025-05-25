@@ -46,4 +46,8 @@ class PropertyController extends Controller
     public function remove_saved_property($id){
         return $this->property->remove_saved_property($id);
     }
+
+    public function premium(Request $request){
+        return $this->property->premium($request);
+    }
 }

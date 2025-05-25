@@ -29,6 +29,8 @@ Route::middleware(['auth:sanctum', 'CheckUserMiddleware','BanUser'])->prefix('us
     Route::delete('remove-saved-property/{id}', [PropertyController::class, 'remove_saved_property']);
     // Update account
     Route::patch('update-profile/{id}', [AuthController::class, 'updateProfile']);
+    // Premium user
+    Route::post('user-premium', [PropertyController::class, 'premium']);
 });
 
 // Visitor routes
@@ -43,4 +45,8 @@ Route::middleware(['auth:sanctum','CheckAdminMiddleware'])->prefix('admin')->gro
     Route::patch('/unban-user/{id}', [AdminController::class, 'unBanUser']);
     Route::patch('/accept-pending-property/{id}', [AdminController::class, 'accept_pending_property']);
     Route::patch('/denied-property/{user_id}/{property_id}', [AdminController::class, 'denied_property']);
+    // Premium
+    Route::get('/premium-requests', [AdminController::class, 'premium_requests']);
+    Route::patch('/accept-premium-request/{id}', [AdminController::class, 'accept_premium_request']);
+    Route::patch('/denied-premium-request/{id}', [AdminController::class, 'denied_premium_request']);
 });
