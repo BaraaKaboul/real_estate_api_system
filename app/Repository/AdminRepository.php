@@ -172,6 +172,10 @@ class AdminRepository implements Interface\AdminRepositoryInterface
             $premium->end_date = $duration;
             $premium->save();
 
+            $user = $premium->user;
+            $user->is_verified_agent = true;
+            $user->save();
+
             return $this->success('Premium request approved successfully', 200, $premium);
 
         } catch (\Exception $e) {

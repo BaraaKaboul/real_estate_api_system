@@ -9,4 +9,8 @@ class Premium extends Model
     protected $fillable = [
         'name','office_name','office_location','phone','about','plan','duration','status','user_id','start_date','end_date'
     ];
+
+    public function user(){
+        return $this->belongsTo(User::class);
+    }
 }

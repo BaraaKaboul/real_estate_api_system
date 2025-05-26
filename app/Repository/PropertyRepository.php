@@ -67,6 +67,31 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
             $prop->user_id = auth()->user()->id;
             $prop->address = $request->address;
 
+            $isFeatured = $request->boolean('is_featured', false);
+
+            if ($isFeatured) {
+                $premium = Premium::where('user_id', auth()->id())
+                    ->whereDate('start_date', '<=', now())
+                    ->whereDate('end_date', '>=', now())
+                    ->first();
+
+                if (!$premium) {
+                    return $this->fail('There is no active premium', 403);
+                }
+
+                if ($premium->plan !== 'golden') {
+                    if ($premium->used_featured >= $premium->max_featured) {
+                        return $this->fail('You have used all your featured listings, but you can still post normal listings.', 403);
+                    }
+
+                    $premium->increment('used_featured');
+                }
+
+                $prop->is_featured = true;
+            } else {
+                $prop->is_featured = false;
+            }
+
             $prop->save();
 
             $images = [];
@@ -295,9 +320,21 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
             $prem->duration = $request->duration;
             $prem->user_id = auth()->user()->id;
 
+            switch ($request->plan) {
+                case 'standard':
+                    $prem->max_featured = 10;
+                    break;
+                case 'pro':
+                    $prem->max_featured = 50;
+                    break;
+                case 'golden':
+                    $prem->max_featured = null; // null تعني "غير محدود"
+                    break;
+            }
+
             $user_exist = Premium::where('name', auth()->user()->name)->exists();
             if ($user_exist){
-                return $this->fail('This user already send premium request',501);
+                return $this->fail('This user already send premium request',409);
             }
             $prem->save();
 

@@ -28,6 +28,7 @@ return new class extends Migration
             $table->tinyInteger('livingRooms');
             $table->decimal('location_lat');
             $table->decimal('location_lon');
+            $table->boolean('is_featured')->default(false);
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
         });
