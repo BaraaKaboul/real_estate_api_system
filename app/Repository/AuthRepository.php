@@ -40,6 +40,7 @@ class AuthRepository implements Interface\AuthRepositoryInterface
                     'name'=>$user->name,
                     'email'=>$user->email,
                     'role'=>$user->role,
+                    'is_verified_agent'=>$user->is_verified_agent
                 ],
                 'token' => $token,
             ];
@@ -78,6 +79,7 @@ class AuthRepository implements Interface\AuthRepositoryInterface
                     'name'=>$user->name,
                     'email'=>$user->email,
                     'role'=>$user->role,
+                    'is_verified_agent'=>$user->is_verified_agent
                 ],
                 'token'=> $token
             ];
