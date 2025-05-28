@@ -21,7 +21,7 @@ return new class extends Migration
             $table->enum('plan',['standard','pro','golden']);
             $table->enum('duration',['month','three month','year']);
             $table->enum('status',['accepted','denied','pending'])->default('pending');
-            $table->unsignedInteger('max_featured')->default(0);
+            $table->unsignedInteger('max_featured')->default(0)->nullable();
             $table->unsignedInteger('used_featured')->default(0);
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();

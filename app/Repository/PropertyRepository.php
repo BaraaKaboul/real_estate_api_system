@@ -363,8 +363,11 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
 
     public function agentDetail($id)
     {
-        try {                                       // Eager loading
-            $user = Premium::where('user_id',$id)->with('user.properties.images')->first();
+        try {                                                                       // Eager loading
+            $user = Premium::where(['user_id'=>$id,'status'=>'accepted'])->with('user.properties.images')->first();
+            if (empty($user)){
+                return $this->fail('There is no user has premium',404);
+            }
             return $this->success('Premium user has been fetched',200,$user);
         }catch (\Exception $e){
             Log::error('Get premium user failed: ' . $e->getMessage());
