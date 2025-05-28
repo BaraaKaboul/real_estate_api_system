@@ -24,4 +24,6 @@ interface PropertyRepositoryInterface
     public function remove_saved_property($id);
 
     public function premium($request);
+
+    public function agentDetail($id);
 }

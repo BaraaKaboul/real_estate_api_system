@@ -50,4 +50,8 @@ class PropertyController extends Controller
     public function premium(Request $request){
         return $this->property->premium($request);
     }
+
+    public function agentDetail($id){
+        return $this->property->agentDetail($id);
+    }
 }

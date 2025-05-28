@@ -345,4 +345,15 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
             return $this->fail('Store premium failed: ' . $e->getMessage(), 500);
         }
     }
+
+    public function agentDetail($id)
+    {
+        try {                                       // Eager loading
+            $user = Premium::where('user_id',$id)->with('user.properties.images')->first();
+            return $this->success('Premium user has been fetched',200,$user);
+        }catch (\Exception $e){
+            Log::error('Get premium user failed: ' . $e->getMessage());
+            return $this->fail('Get premium user failed: ' . $e->getMessage(), 500);
+        }
+    }
 }

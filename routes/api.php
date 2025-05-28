@@ -31,6 +31,7 @@ Route::middleware(['auth:sanctum', 'CheckUserMiddleware','BanUser'])->prefix('us
     Route::patch('update-profile/{id}', [AuthController::class, 'updateProfile']);
     // Premium user
     Route::post('user-premium', [PropertyController::class, 'premium']);
+    Route::get('agent-detail/{id}', [PropertyController::class, 'agentDetail']);
 });
 
 // Visitor routes
