@@ -20,14 +20,29 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
     public function index()
     {
         try {
-            $data = Property::where('user_id',auth()->user()->id)->orderBy('created_at','DESC')->with('images')->paginate(5);
-            if (!$data){
-                return $this->fail('There is no property found',404);
-            }
-            return $this->success('Data fetched successfully',200,$data);
+            $data = Property::with(['images', 'user.activePremium'])
+                ->leftJoin('premiums', function ($join) {
+                    $join->on('properties.user_id', '=', 'premiums.user_id')
+                        ->where('premiums.status', 'accepted')
+                        ->whereDate('premiums.end_date', '>=', now());
+                })
+                ->select('properties.*', DB::raw("
+                CASE
+                    WHEN properties.is_featured = 1 AND premiums.plan = 'golden' THEN 1
+                    WHEN properties.is_featured = 1 AND premiums.plan = 'pro' THEN 2
+                    WHEN properties.is_featured = 1 AND premiums.plan = 'standard' THEN 3
+                    WHEN properties.is_featured = 1 THEN 4
+                    ELSE 5
+                END as priority
+            "))
+                ->orderBy('priority', 'asc')
+                ->orderBy('properties.created_at', 'desc')
+                ->paginate(5);
 
-        }catch (\Exception $e){
-            return $this->fail($e,500);
+            return $this->success('Data fetched successfully', 200, $data);
+
+        } catch (\Exception $e) {
+            return $this->fail($e->getMessage(), 500);
         }
     }
 

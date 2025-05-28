@@ -31,12 +31,13 @@ Route::middleware(['auth:sanctum', 'CheckUserMiddleware','BanUser'])->prefix('us
     Route::patch('update-profile/{id}', [AuthController::class, 'updateProfile']);
     // Premium user
     Route::post('user-premium', [PropertyController::class, 'premium']);
-    Route::get('agent-detail/{id}', [PropertyController::class, 'agentDetail']);
 });
 
 // Visitor routes
 Route::get('/realestate', [VisitorController::class, 'index']);
 Route::get('/realestate/property-details/{id}', [VisitorController::class, 'show']);
+// Premium user
+Route::get('agent-detail/{id}', [PropertyController::class, 'agentDetail']);
 
 // Admin routes
 Route::middleware(['auth:sanctum','CheckAdminMiddleware'])->prefix('admin')->group(function (){
