@@ -20,27 +20,26 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
     public function index()
     {
         try {
-            $data = Property::with(['images', 'user.activePremium'])
-                ->leftJoin('premiums', function ($join) {
-                    $join->on('properties.user_id', '=', 'premiums.user_id')
-                        ->where('premiums.status', 'accepted')
-                        ->whereDate('premiums.end_date', '>=', now());
-                })
-                ->select('properties.*', DB::raw("
+            $data = Property::with('images')
+                ->leftJoin('premia', 'properties.user_id', '=', 'premia.user_id')
+                ->select('properties.*', 'premia.plan')
+                ->orderByDesc('is_featured')
+                ->orderByRaw("
                 CASE
-                    WHEN properties.is_featured = 1 AND premiums.plan = 'golden' THEN 1
-                    WHEN properties.is_featured = 1 AND premiums.plan = 'pro' THEN 2
-                    WHEN properties.is_featured = 1 AND premiums.plan = 'standard' THEN 3
-                    WHEN properties.is_featured = 1 THEN 4
-                    ELSE 5
-                END as priority
-            "))
-                ->orderBy('priority', 'asc')
-                ->orderBy('properties.created_at', 'desc')
+                    WHEN premia.plan = 'golden' THEN 1
+                    WHEN premia.plan = 'pro' THEN 2
+                    WHEN premia.plan = 'standard' THEN 3
+                    ELSE 4
+                END
+            ")
+                ->orderByDesc('properties.created_at')
                 ->paginate(5);
 
-            return $this->success('Data fetched successfully', 200, $data);
+            if ($data->isEmpty()) {
+                return $this->fail('There is no property found', 404);
+            }
 
+            return $this->success('Data fetched successfully', 200, $data);
         } catch (\Exception $e) {
             return $this->fail($e->getMessage(), 500);
         }
