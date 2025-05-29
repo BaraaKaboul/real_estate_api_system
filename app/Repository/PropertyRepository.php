@@ -20,31 +20,77 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
     public function index()
     {
         try {
-            $data = Property::with('images')
-                ->leftJoin('premia', 'properties.user_id', '=', 'premia.user_id')
-                ->select('properties.*', 'premia.plan')
-                ->orderByDesc('is_featured')
-                ->orderByRaw("
-                CASE
-                    WHEN premia.plan = 'golden' THEN 1
-                    WHEN premia.plan = 'pro' THEN 2
-                    WHEN premia.plan = 'standard' THEN 3
-                    ELSE 4
-                END
-            ")
-                ->orderByDesc('properties.created_at')
-                ->paginate(5);
+            $goldenFeatured = Property::with('images')
+                ->where('is_featured', true)
+                ->whereHas('user.premium', function ($q) {
+                    $q->where('plan', 'golden');
+                })
+                ->latest()
+                ->get();
 
-            if ($data->isEmpty()) {
+            $proFeatured = Property::with('images')
+                ->where('is_featured', true)
+                ->whereHas('user.premium', function ($q) {
+                    $q->where('plan', 'pro');
+                })
+                ->latest()
+                ->get();
+
+            $standardFeatured = Property::with('images')
+                ->where('is_featured', true)
+                ->whereHas('user.premium', function ($q) {
+                    $q->where('plan', 'standard');
+                })
+                ->latest()
+                ->get();
+
+            $goldenNormal = Property::with('images')
+                ->where('is_featured', false)
+                ->whereHas('user.premium', function ($q) {
+                    $q->where('plan', 'golden');
+                })
+                ->latest()
+                ->get();
+
+            $proNormal = Property::with('images')
+                ->where('is_featured', false)
+                ->whereHas('user.premium', function ($q) {
+                    $q->where('plan', 'pro');
+                })
+                ->latest()
+                ->get();
+
+            $standardNormal = Property::with('images')
+                ->where('is_featured', false)
+                ->whereHas('user.premium', function ($q) {
+                    $q->where('plan', 'standard');
+                })
+                ->latest()
+                ->get();
+
+            $others = Property::with('images')
+                ->whereDoesntHave('user.premium')
+                ->latest()
+                ->get();
+
+            // دمج الكل بترتيب مخصص
+            $all = $goldenFeatured
+                ->concat($proFeatured)
+                ->concat($standardFeatured)
+                ->concat($goldenNormal)
+                ->concat($proNormal)
+                ->concat($standardNormal)
+                ->concat($others);
+
+            if ($all->isEmpty()) {
                 return $this->fail('There is no property found', 404);
             }
 
-            return $this->success('Data fetched successfully', 200, $data);
+            return $this->success('Data fetched successfully', 200, $all->values());
         } catch (\Exception $e) {
             return $this->fail($e->getMessage(), 500);
         }
     }
-
     public function show($request)
     {
         try {
@@ -97,9 +143,9 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
                     if ($premium->used_featured >= $premium->max_featured) {
                         return $this->fail('You have used all your featured listings, but you can still post normal listings.', 403);
                     }
-
-                    $premium->increment('used_featured');
                 }
+
+                $premium->increment('used_featured');
 
                 $prop->is_featured = true;
             } else {
