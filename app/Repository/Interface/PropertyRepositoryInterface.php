@@ -11,7 +11,7 @@ interface PropertyRepositoryInterface
 
     public function store($request);
 
-    public function show($request);
+    public function show();
 
     public function update($request, Property $property);
 

@@ -23,8 +23,8 @@ class PropertyController extends Controller
         return $this->property->store($request);
     }
 
-    public function show(Request $request){
-        return $this->property->show($request);
+    public function show(){
+        return $this->property->show();
     }
 
     public function update(PropertyValidationRequest $request, Property $property){

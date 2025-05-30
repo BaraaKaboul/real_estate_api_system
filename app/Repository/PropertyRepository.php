@@ -91,12 +91,12 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
             return $this->fail($e->getMessage(), 500);
         }
     }
-    public function show($request)
+    public function show()
     {
         try {
-            $prop_by_id = Property::where(['id'=>$request->id,'user_id'=>auth()->user()->id])->with('images')->first();
+            $prop_by_id = Property::where('user_id',auth()->user()->id)->get();
             if (!$prop_by_id){
-                return $this->fail('There is no property found',404);
+                return $this->fail('There is no property found for this user',404);
             }
             return $this->success('Data fetched successfully',200,$prop_by_id);
 
