@@ -201,27 +201,128 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
 
     public function update($request, Property $property)
     {
+//        if ($property->user_id != auth()->id()) {
+//            return $this->fail('Unauthorized to update this property.', 403);
+//        }
+//        try {
+//        $property->update([
+//            'title'=>$request->title,
+//            'description'=>$request->description,
+//            'price'=>$request->price,
+//            'area'=>$request->area,
+//            'type'=>$request->type,
+//            'purpose'=>$request->purpose,
+//            'phone'=>$request->phone,
+//            'balconies'=>$request->balconies,
+//            'bedrooms'=>$request->bedrooms,
+//            'bathrooms'=>$request->bathrooms,
+//            'livingRooms'=>$request->livingRooms,
+//            'location_lat'=>$request->location_lat,
+//            'location_lon'=>$request->location_lon,
+//            'address'=>$request->address,
+//            'status'=>'pending'
+//        ]);
+//
+//            $uploadedImages = [];
+//
+//            if ($request->hasFile('images')) {
+//                foreach ($property->images as $image) {
+//                    $this->deleteImage($image->url);
+//                    $image->delete();
+//                }
+//
+//                foreach ($request->file('images') as $file) {
+//                    $response = Http::timeout(90)
+//                        ->withOptions(['verify' => false])
+//                        ->attach(
+//                            'image',
+//                            file_get_contents($file),
+//                            $file->getClientOriginalName()
+//                        )
+//                        ->post('https://api.imgbb.com/1/upload?key=' . env('IMGBB_API_KEY'));
+//
+//                    if ($response->successful()) {
+//                        $url = $response['data']['url'];
+//
+//                        $uploadedImages[] = $property->images()->create([
+//                            'filename' => $file->getClientOriginalName(),
+//                            'url' => $url,
+//                            'imageable_id' => $property->id,
+//                            'imageable_type' => Property::class
+//                        ]);
+//                    } else {
+//                        Log::error('Failed to upload image to imgBB', [
+//                            'response' => $response->body(),
+//                        ]);
+//                    }
+//                }
+//            }
+//
+//            DB::commit();
+//
+//            $property->load('images');
+//
+//            return $this->success('Property updated successfully', 200, [
+//                'property' => $property,
+//                'images' => !empty($uploadedImages) ? $uploadedImages : $property->images,
+//            ]);
+//
+//        } catch (\Exception $e) {
+//            DB::rollBack();
+//            Log::error('Update failed: ' . $e->getMessage() . ' Trace: ' . $e->getTraceAsString()); // Log more details
+//            return $this->fail('Update failed: ' . $e->getMessage(), 500);
+//        }
         if ($property->user_id != auth()->id()) {
             return $this->fail('Unauthorized to update this property.', 403);
         }
+
+        DB::beginTransaction();
+
         try {
-        $property->update([
-            'title'=>$request->title,
-            'description'=>$request->description,
-            'price'=>$request->price,
-            'area'=>$request->area,
-            'type'=>$request->type,
-            'purpose'=>$request->purpose,
-            'phone'=>$request->phone,
-            'balconies'=>$request->balconies,
-            'bedrooms'=>$request->bedrooms,
-            'bathrooms'=>$request->bathrooms,
-            'livingRooms'=>$request->livingRooms,
-            'location_lat'=>$request->location_lat,
-            'location_lon'=>$request->location_lon,
-            'address'=>$request->address,
-            'status'=>'pending'
-        ]);
+            $property->title = $request->title;
+            $property->description = $request->description;
+            $property->price = $request->price;
+            $property->area = $request->area;
+            $property->type = $request->type;
+            $property->purpose = $request->purpose;
+            $property->phone = $request->phone;
+            $property->balconies = $request->balconies;
+            $property->bedrooms = $request->bedrooms;
+            $property->bathrooms = $request->bathrooms;
+            $property->livingRooms = $request->livingRooms;
+            $property->location_lat = $request->location_lat;
+            $property->location_lon = $request->location_lon;
+            $property->address = $request->address;
+            $property->status = 'pending';
+
+            $isFeatured = $request->boolean('is_featured', false);
+
+            if ($isFeatured) {
+                $premium = Premium::where('user_id', auth()->id())
+                    ->whereDate('start_date', '<=', now())
+                    ->whereDate('end_date', '>=', now())
+                    ->first();
+
+                if (!$premium) {
+                    return $this->fail('There is no active premium', 403);
+                }
+
+                if ($premium->plan !== 'golden') {
+                    if ($property->is_featured == false) { // فقط إذا لم تكن مميزة مسبقاً
+                        if ($premium->used_featured >= $premium->max_featured) {
+                            return $this->fail('You have used all your featured listings.', 403);
+                        }
+
+                        $premium->increment('used_featured');
+                    }
+                }
+
+                $property->is_featured = true;
+            } else {
+                $property->is_featured = false;
+            }
+
+            $property->save();
 
             $uploadedImages = [];
 
@@ -232,8 +333,7 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
                 }
 
                 foreach ($request->file('images') as $file) {
-                    $response = Http::timeout(90)
-                        ->withOptions(['verify' => false])
+                    $response = Http::withOptions(['verify' => false])
                         ->attach(
                             'image',
                             file_get_contents($file),
@@ -248,7 +348,7 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
                             'filename' => $file->getClientOriginalName(),
                             'url' => $url,
                             'imageable_id' => $property->id,
-                            'imageable_type' => Property::class
+                            'imageable_type' => Property::class,
                         ]);
                     } else {
                         Log::error('Failed to upload image to imgBB', [
@@ -266,10 +366,11 @@ class PropertyRepository implements Interface\PropertyRepositoryInterface
                 'property' => $property,
                 'images' => !empty($uploadedImages) ? $uploadedImages : $property->images,
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Update failed: ' . $e->getMessage() . ' Trace: ' . $e->getTraceAsString()); // Log more details
+            Log::error('Update failed: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
             return $this->fail('Update failed: ' . $e->getMessage(), 500);
         }
     }

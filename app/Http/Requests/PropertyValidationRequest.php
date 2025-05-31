@@ -39,15 +39,8 @@ class PropertyValidationRequest extends FormRequest
             'images.*' => 'sometimes|image|mimes:jpeg,png,jpg|max:2048',//'sometimes|string|url'
             'address' => 'required|string',
         ];
-
-//        // For update operations
-//        if ($this->isMethod('patch')) {
-//        $rules['id'] = 'required|exists:properties,id';
-//        }
-
         return $rules;
     }
-
     public function messages()
     {
         return [

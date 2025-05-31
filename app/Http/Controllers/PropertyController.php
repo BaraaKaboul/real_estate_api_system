@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\PremiumRequest;
 use App\Http\Requests\PropertyValidationRequest;
 use App\Models\Property;
 use App\Repository\Interface\PropertyRepositoryInterface;
@@ -47,7 +48,7 @@ class PropertyController extends Controller
         return $this->property->remove_saved_property($id);
     }
 
-    public function premium(Request $request){
+    public function premium(PremiumRequest $request){
         return $this->property->premium($request);
     }
 
